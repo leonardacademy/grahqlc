@@ -1,10 +1,10 @@
-// Package graphql provides a low level GraphQL client.
+// Package graphqlc provides a low level GraphQL client.
 //
 //  // create a client (safe to share across requests)
-//  client := graphql.NewClient("https://machinebox.io/graphql")
+//  client := graphqlc.NewClient("https://machinebox.io/graphql")
 //
 //  // make a request
-//  req := graphql.NewRequest(`
+//  req := graphqlc.NewRequest(`
 //      query ($key: String!) {
 //          items (id:$key) {
 //              field1
@@ -27,8 +27,8 @@
 //
 // To specify your own http.Client, use the WithHTTPClient option:
 //  httpclient := &http.Client{}
-//  client := graphql.NewClient("https://machinebox.io/graphql", graphql.WithHTTPClient(httpclient))
-package graphql
+//  client := graphqlc.NewClient("https://machinebox.io/graphql", graphql.WithHTTPClient(httpclient))
+package graphqlc
 
 import (
 	"bytes"

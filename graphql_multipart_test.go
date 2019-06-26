@@ -1,4 +1,4 @@
-package graphql
+package graphqlc
 
 import (
 	"context"
@@ -44,10 +44,10 @@ func TestDoUseMultipartForm(t *testing.T) {
 		query := r.FormValue("query")
 		is.Equal(query, `query {}`)
 		io.WriteString(w, `{
-			"data": {
-				"something": "yes"
-			}
-		}`)
+            "data": {
+                "something": "yes"
+            }
+        }`)
 	}))
 	defer srv.Close()
 
@@ -71,10 +71,10 @@ func TestImmediatelyCloseReqBody(t *testing.T) {
 		query := r.FormValue("query")
 		is.Equal(query, `query {}`)
 		io.WriteString(w, `{
-			"data": {
-				"something": "yes"
-			}
-		}`)
+            "data": {
+                "something": "yes"
+            }
+        }`)
 	}))
 	defer srv.Close()
 
@@ -99,10 +99,10 @@ func TestDoErr(t *testing.T) {
 		query := r.FormValue("query")
 		is.Equal(query, `query {}`)
 		io.WriteString(w, `{
-			"errors": [{
-				"message": "Something went wrong"
-			}]
-		}`)
+            "errors": [{
+                "message": "Something went wrong"
+            }]
+        }`)
 	}))
 	defer srv.Close()
 
@@ -150,10 +150,10 @@ func TestDoBadRequestErr(t *testing.T) {
 		is.Equal(query, `query {}`)
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, `{
-			"errors": [{
-				"message": "miscellaneous message as to why the the request was bad"
-			}]
-		}`)
+            "errors": [{
+                "message": "miscellaneous message as to why the the request was bad"
+            }]
+        }`)
 	}))
 	defer srv.Close()
 
@@ -176,10 +176,10 @@ func TestDoNoResponse(t *testing.T) {
 		query := r.FormValue("query")
 		is.Equal(query, `query {}`)
 		io.WriteString(w, `{
-			"data": {
-				"something": "yes"
-			}
-		}`)
+            "data": {
+                "something": "yes"
+            }
+        }`)
 	}))
 	defer srv.Close()
 

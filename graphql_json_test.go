@@ -1,4 +1,4 @@
-package graphql
+package graphqlc
 
 import (
 	"context"
@@ -22,10 +22,10 @@ func TestDoJSON(t *testing.T) {
 		is.NoErr(err)
 		is.Equal(string(b), `{"query":"query {}","variables":null}`+"\n")
 		io.WriteString(w, `{
-			"data": {
-				"something": "yes"
-			}
-		}`)
+            "data": {
+                "something": "yes"
+            }
+        }`)
 	}))
 	defer srv.Close()
 
@@ -77,10 +77,10 @@ func TestDoJSONBadRequestErr(t *testing.T) {
 		is.Equal(string(b), `{"query":"query {}","variables":null}`+"\n")
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, `{
-			"errors": [{
-				"message": "miscellaneous message as to why the the request was bad"
-			}]
-		}`)
+            "errors": [{
+                "message": "miscellaneous message as to why the the request was bad"
+            }]
+        }`)
 	}))
 	defer srv.Close()
 
