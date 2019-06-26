@@ -23,7 +23,6 @@
 //  if err := client.Run(ctx, req, &respData); err != nil {
 //      log.Fatal(err)
 //  }
-// Specify client
 package graphqlc
 
 import (
