@@ -1,4 +1,4 @@
-# graphql [![GoDoc](https://godoc.org/github.com/leonardacademy/graphql-client?status.png)](http://godoc.org/github.com/leonardacademy/graphql-client) [![Build Status](https://travis-ci.org/leonardacademy/graphql-client.svg?branch=master)](https://travis-ci.org/leonardacademy/graphql-client) [![Go Report Card](https://goreportcard.com/badge/github.com/leonardacademy/graphql-client)](https://goreportcard.com/report/github.com/leonardacademy/graphql-client)
+# graphql-client [![GoDoc](https://godoc.org/github.com/leonardacademy/graphql-client?status.png)](http://godoc.org/github.com/leonardacademy/graphql-client) [![Build Status](https://travis-ci.org/leonardacademy/graphql-client.svg?branch=master)](https://travis-ci.org/leonardacademy/graphql-client) [![Go Report Card](https://goreportcard.com/badge/github.com/leonardacademy/graphql-client)](https://goreportcard.com/report/github.com/leonardacademy/graphql-client)
 
 Low-level GraphQL client for Go.
 
