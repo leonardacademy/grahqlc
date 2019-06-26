@@ -12,7 +12,7 @@ import (
 	"github.com/matryer/is"
 )
 
-func TestDoJSON(t *testing.T) {
+func TestDo(t *testing.T) {
 	is := is.New(t)
 	var calls int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,7 @@ func TestDoJSON(t *testing.T) {
 	is.Equal(responseData["something"], "yes")
 }
 
-func TestDoJSONServerError(t *testing.T) {
+func TestDoServerError(t *testing.T) {
 	is := is.New(t)
 	var calls int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +66,7 @@ func TestDoJSONServerError(t *testing.T) {
 	is.Equal(err.Error(), "graphql: server returned a non-200 status code: 500")
 }
 
-func TestDoJSONBadRequestErr(t *testing.T) {
+func TestDoBadRequestErr(t *testing.T) {
 	is := is.New(t)
 	var calls int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func TestDoJSONBadRequestErr(t *testing.T) {
 	is.Equal(err.Error(), "graphql: miscellaneous message as to why the the request was bad")
 }
 
-func TestQueryJSON(t *testing.T) {
+func TestQuery(t *testing.T) {
 	is := is.New(t)
 
 	var calls int
