@@ -13,8 +13,9 @@
 //          }
 //      }
 //  `)
-//
-//  // set any variables
+//  //(optional) set your own http client
+//  client.HttpClient = http.DefaultClient
+//  //(optional) set any variables
 //  req.Var("key", "value")
 //
 //  // run it and capture the response
@@ -22,12 +23,7 @@
 //  if err := client.Run(ctx, req, &respData); err != nil {
 //      log.Fatal(err)
 //  }
-//
 // Specify client
-//
-// To specify your own http.Client, use the WithHTTPClient option:
-//  httpclient := &http.Client{}
-//  client := graphqlc.NewClient("https://machinebox.io/graphql", graphql.WithHTTPClient(httpclient))
 package graphqlc
 
 import (
