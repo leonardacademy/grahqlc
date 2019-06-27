@@ -24,7 +24,11 @@ func (c *Client) subscribe(ctx context.Context, req *Request, resp chan<-interfa
 	default:
 	}
 	protocol := strings.SplitN(c.Endpoint, ":", 2)[0]
-	if protocol != "ws" && protocol != "wss" {
+    if protocol == "http" {
+        protocol = "ws"
+    } else if protocol == "https" {
+        protocol = "wss"
+    } else if protocol != "ws" && protocol != "wss" {
 		return errors.New("protocol for Endpoint url needs to be ws or wss when the query is a subscription")
 	}
 	ws, err := websocket.Dial(c.Endpoint, protocol, c.Endpoint)
