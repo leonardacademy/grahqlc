@@ -72,12 +72,12 @@ func (c *Client) subscribe(ctx context.Context, req *Request, resp chan<-interfa
                 if pmap["data"] != nil {
                     resp <- pmap["data"]
                 } else if err, exists := pmap["errors"]; exists {
-                    c.logf("graphqlc: got resolver errrors during subscription: %s", responseError(err))
+                    c.logf("got resolver errrors during subscription: %s", responseError(err))
                 } else {
-                    c.logf("graphqlc: got a data response from the server during subscription, but no data.")
+                    c.logf("got a data response from the server during subscription, but no data.")
                 }
             } else {
-                c.logf("graphqlc: received data message during subscription but could not parse it into a json object.")
+                c.logf("received data message during subscription but could not parse it into a json object.")
             }
 		}
 	}
