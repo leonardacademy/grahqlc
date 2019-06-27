@@ -41,9 +41,3 @@ func TestFile(t *testing.T) {
 	err := client.Run(ctx, req, nil)
 	is.NoErr(err)
 }
-
-type roundTripperFunc func(req *http.Request) (*http.Response, error)
-
-func (fn roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
-}

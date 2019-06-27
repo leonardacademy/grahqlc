@@ -91,46 +91,15 @@ func (c *Client) Run(ctx context.Context, req *Request, resp interface{}) error 
 		var requestBody bytes.Buffer
 		var contentType string
 		if len(req.files) > 0 {
-			writer := multipart.NewWriter(&requestBody)
-			contentType = writer.FormDataContentType()
-			if err := writer.WriteField("query", req.q); err != nil {
-				return errors.Wrap(err, "write query field")
-			}
-			var variablesBuf bytes.Buffer
-			if len(req.vars) > 0 {
-				variablesField, err := writer.CreateFormField("variables")
-				if err != nil {
-					return errors.Wrap(err, "create variables field")
-				}
-				if err := json.NewEncoder(io.MultiWriter(variablesField, &variablesBuf)).Encode(req.vars); err != nil {
-					return errors.Wrap(err, "encode variables")
-				}
-			}
-			for i := range req.files {
-				part, err := writer.CreateFormFile(req.files[i].Field, req.files[i].Name)
-				if err != nil {
-					return errors.Wrap(err, "create form file")
-				}
-				if _, err := io.Copy(part, req.files[i].R); err != nil {
-					return errors.Wrap(err, "preparing file")
-				}
-			}
-			if err := writer.Close(); err != nil {
-				return errors.Wrap(err, "close writer")
+			if err := encodeRequestBody(&requestBody, &contentType, req, true); err != nil {
+				return err
 			}
 			c.logf(">> files: %d", len(req.files))
 		} else {
-			contentType = "application/json; charset=utf-8"
-			requestBodyObj := struct {
-				Query     string                 `json:"query"`
-				Variables map[string]interface{} `json:"variables"`
-			}{
-				Query:     req.q,
-				Variables: req.vars,
+			if err := encodeRequestBody(&requestBody, &contentType, req, false); err != nil {
+				return err
 			}
-			if err := json.NewEncoder(&requestBody).Encode(requestBodyObj); err != nil {
-				return errors.Wrap(err, "encode body")
-			}
+
 		}
 		c.logf(">> variables: %v", req.vars)
 		c.logf(">> query: %s", req.q)
@@ -143,8 +112,15 @@ func (c *Client) Run(ctx context.Context, req *Request, resp interface{}) error 
 		}
 		r.Close = c.CloseReq
 		r.Header.Set("Content-Type", contentType)
+		for key, values := range c.Header {
+			r.Header.Set(key, values[0])
+			for _, value := range values[1:] {
+				r.Header.Add(key, value)
+			}
+		}
 		for key, values := range req.Header {
-			for _, value := range values {
+			r.Header.Set(key, values[0])
+			for _, value := range values[1:] {
 				r.Header.Add(key, value)
 			}
 		}
@@ -172,6 +148,51 @@ func (c *Client) Run(ctx context.Context, req *Request, resp interface{}) error 
 		}
 		return nil
 	}
+}
+
+func encodeRequestBody(requestBody *bytes.Buffer, contentType *string, req *Request, multiPartForm bool) error {
+	if multiPartForm {
+		writer := multipart.NewWriter(requestBody)
+		*contentType = writer.FormDataContentType()
+		if err := writer.WriteField("query", req.q); err != nil {
+			return errors.Wrap(err, "write query field")
+		}
+		var variablesBuf bytes.Buffer
+		if len(req.vars) > 0 {
+			variablesField, err := writer.CreateFormField("variables")
+			if err != nil {
+				return errors.Wrap(err, "create variables field")
+			}
+			if err := json.NewEncoder(io.MultiWriter(variablesField, &variablesBuf)).Encode(req.vars); err != nil {
+				return errors.Wrap(err, "encode variables")
+			}
+		}
+		for i := range req.files {
+			part, err := writer.CreateFormFile(req.files[i].Field, req.files[i].Name)
+			if err != nil {
+				return errors.Wrap(err, "create form file")
+			}
+			if _, err := io.Copy(part, req.files[i].R); err != nil {
+				return errors.Wrap(err, "preparing file")
+			}
+		}
+		if err := writer.Close(); err != nil {
+			return errors.Wrap(err, "close writer")
+		}
+	} else {
+		*contentType = "application/json; charset=utf-8"
+		requestBodyObj := struct {
+			Query     string                 `json:"query"`
+			Variables map[string]interface{} `json:"variables"`
+		}{
+			Query:     req.q,
+			Variables: req.vars,
+		}
+		if err := json.NewEncoder(requestBody).Encode(requestBodyObj); err != nil {
+			return errors.Wrap(err, "encode body")
+		}
+	}
+    return nil
 }
 
 // ClientOption are functions that are passed into NewClient to
