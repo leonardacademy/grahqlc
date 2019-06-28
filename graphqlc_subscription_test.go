@@ -57,17 +57,23 @@ func TestSubscription(t *testing.T) {
     }`)
 	r.Var("key", row.Id.String())
 	eventsChan := make(chan (SubscriptionEvent))
-	var resp testRowResp
-	go cl.Subscribe(context.Background(), r, &resp, eventsChan)
+	go cl.Subscribe(context.Background(), r, eventsChan)
 	select {
 	case event := <-eventsChan:
-		if event.NewData == false {
+		if event.Data == nil {
 			t.Error("encountered error during subscription: ", event.Err)
 		} else {
-			log.Println(fmt.Sprintf("%v", resp))
-			row = resp.Row[0]
-			if row.Num != rNum || row.Sentence != rSentence {
-				t.Error("returned array does not match insertion: ", rNum, rSentence, row.Num, row.Sentence)
+			var resp testRowResp
+            err = json.Unmarshal(event.Data, &resp)
+            if err == nil {
+                log.Println(fmt.Sprintf("%v", event.Data))
+                row = resp.Row[0]
+                if row.Num != rNum || row.Sentence != rSentence {
+                    t.Error("returned array does not match insertion: ", rNum, rSentence, row.Num, row.Sentence)
+                }
+                return
+            } else {
+                t.Error("error during decoding of server response: ", err)
 			}
 		}
 	}
