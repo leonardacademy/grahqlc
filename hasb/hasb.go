@@ -196,7 +196,7 @@ func DeleteRow(tableName string, id interface{}) *graphqlc.Request {
 	return DeleteWhere(tableName, vars, where)
 }
 
-func UpdateRowCol(tableName string, rowId string, columnName string, rowColVal interface{}) *graphqlc.Request {
+func UpdateRowCol(tableName string, rowId interface{}, columnName string, rowColVal interface{}) *graphqlc.Request {
 	return UpdateRow(tableName, rowId, map[string]interface{}{columnName: rowColVal})
 }
 
