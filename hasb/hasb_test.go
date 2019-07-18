@@ -35,14 +35,14 @@ func TestGetUpdate(t *testing.T) {
 			log.Println(err)
 			return false
 		}
-		var ret map[string]interface{}
-		err = client.Run(context.Background(), GetRow("graphqlc_tests", uuid.FromStringOrNil(id), []string{"num", "sentence"}), &ret)
+		var resp QResp
+		err = client.Run(context.Background(), GetRow("graphqlc_tests", uuid.FromStringOrNil(id), []string{"num", "sentence"}), &resp)
 		if err != nil {
 			log.Println(err)
 			return false
 		}
-		log.Println(ret)
-		ret = ret["graphqlc_tests"].([]interface{})[0].(map[string]interface{})
+		log.Println(resp)
+        ret := resp["graphqlc_tests"][0]
 		return ret["num"] == float64(x) && ret["sentence"] == s
 	}
 	if err := quick.Check(f, &quick.Config{MaxCount: 10}); err != nil {

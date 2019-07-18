@@ -40,6 +40,8 @@ type EventTrigger struct {
 	Name string `json:"name"`
 }
 
+type QResp map[string][]map[string]interface{}
+
 type MResp map[string]MInnerResp
 
 type MInnerResp struct {
