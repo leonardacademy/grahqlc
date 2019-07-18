@@ -40,8 +40,8 @@ func NewExpTreeB() *ExpressionTreeBuilder {
 	return ret
 }
 
-func (ct *ExpressionTreeBuilder) Result() ExpressionTree {
-	return ct.working
+func (ct *ExpressionTreeBuilder) Result() *ExpressionTree {
+	return &ct.working
 }
 
 func (ct *ExpressionTreeBuilder) Left() *ExpressionTreeBuilder {

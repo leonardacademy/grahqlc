@@ -3,6 +3,7 @@ package hasb
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -39,6 +40,13 @@ type EventTrigger struct {
 	Name string `json:"name"`
 }
 
+type MResp map[string]MInnerResp
+
+type MInnerResp struct {
+    AffectedRows int `json:"affected_rows"`
+    Returning []map[string]interface{} `json:"returning"`
+}
+
 func hasuraTypeOf(x interface{}) string {
 	switch x.(type) {
 	case int:
@@ -69,75 +77,207 @@ func GetEventPayload(r *http.Request) (*EventPayload, error) {
 	return payload, err
 }
 
-func DeleteWhere(tableName string, vars map[string]interface{}, where ExpressionTree) *graphqlc.Request {
-	reqs := "mutation ("
-	for k, v := range vars {
-		varType := hasuraTypeOf(v)
-		reqs += "$" + k + ": " + varType + "!, "
-	}
-	reqs = strings.TrimSuffix(reqs, ", ")
-	reqs += `) {
-        delete_` + tableName + "(where: {" + where.String() + `}) {
-            affected_rows
-        }
-    }`
-	req := graphqlc.NewRequest(reqs)
-	for k, v := range vars {
-		req.Var(k, v)
-	}
-	return req
+type Query struct {
+	Vars            map[string]interface{}
+	getQueries      []GetQuery
+	MutationQueries []MutationQuery
 }
 
-func DeleteRow(tableName string, id interface{}) *graphqlc.Request {
-	where := NewExpTreeB().Val("_eq").LRVal("id", "$key").Result()
-	vars := make(map[string]interface{})
-	vars["id"] = id
-	return DeleteWhere(tableName, vars, where)
+type GetQuery struct {
+	tables []GetQueryTable
 }
 
-func UpdateRowCol(tableName string, rowId interface{}, columnName string, rowColVal interface{}) *graphqlc.Request {
-	return UpdateRow(tableName, rowId, map[string]interface{}{columnName: rowColVal})
+type GetQueryTable struct {
+	Name    string
+	Where   *ExpressionTree
+	Objects []string
 }
 
-//it just works
-func UpdateRow(tableName string, rowId interface{}, columnValues map[string]interface{}) *graphqlc.Request {
-	reqs := "mutation ($id: " + hasuraTypeOf(rowId) + "!, "
-	for k := range columnValues {
-		varType := hasuraTypeOf(columnValues[k])
-		reqs += "$" + k + ": " + varType + "!, "
-	}
-	reqs = strings.TrimSuffix(reqs, ", ")
-	reqs += `) {
-        update_` + tableName + "(where: {id: {_eq: $id}}, _set: {"
-	for k := range columnValues {
-		reqs += k + ": " + "$" + k + ", "
-	}
-	reqs = strings.TrimSuffix(reqs, ", ")
-	reqs += `}) {
-            affected_rows
-        }
-    }`
-	req := graphqlc.NewRequest(reqs)
-	req.Var("id", rowId)
-	for k, v := range columnValues {
-		req.Var(k, v)
-	}
-	return req
+type MutationQuery struct {
+	UpdateQueries []UpdateQuery
+	InsertQueries []InsertQuery
+	DeleteQueries []DeleteQuery
 }
 
-func GetRowCol(tableName string, rowId interface{}, columnName string) *graphqlc.Request {
-	return GetRow(tableName, rowId, []string{columnName})
+type DeleteQuery struct {
+	TableName    string
+	Where        *ExpressionTree
+	Returning    []string
+	AffectedRows bool
 }
 
-func GetRow(tableName string, rowId interface{}, columns []string) *graphqlc.Request {
-	reqs := "query ($id: " + hasuraTypeOf(rowId) + "!) {\n"
-	reqs += "\t" + tableName + "(where: {id: {_eq: $id}}) {\n"
-	for _, v := range columns {
-		reqs += "\t\t" + v + "\n"
+type InsertQuery struct {
+	TableName    string
+	Objects      map[string]string
+	Returning    []string
+	AffectedRows bool
+}
+
+type UpdateQuery struct {
+	TableName    string
+	Where        *ExpressionTree
+	Set          map[string]string
+	Returning    []string
+	AffectedRows bool
+}
+
+func (q *Query) String() string {
+	var ret string
+	for i, gq := range q.getQueries {
+		ret += "query gq" + fmt.Sprintf("%d", i)
+		ret += wrapQuery(q.Vars, gq.String())
 	}
-	reqs += "\t}\n"
-	reqs += "}"
-	req := graphqlc.NewRequest(reqs)
-	req.Var("id", rowId)
-	return req
+	ret += "\n"
+	for i, mq := range q.MutationQueries {
+		ret += "mutation mq" + fmt.Sprintf("%d", i)
+		ret += wrapQuery(q.Vars, mq.String())
+	}
+	return ret
+}
+
+func (q *Query) Request() *graphqlc.Request {
+	ret := graphqlc.NewRequest(q.String())
+	for k, v := range q.Vars {
+		ret.Var(k, v)
+	}
+	return ret
+}
+
+func wrapQuery(Vars map[string]interface{}, q string) string {
+	ret := "("
+	for k, v := range Vars {
+		if strings.Contains(q, "$"+k) {
+			ret += "$" + k + ": " + hasuraTypeOf(v) + ", "
+		}
+	}
+	ret = strings.TrimSuffix(ret, ", ")
+	ret += ")"
+	ret = strings.TrimSuffix(ret, "()") //In case the above query does not contain any variables.
+	ret += " " + q
+	return ret
+}
+
+func (q *Query) AddGetQueries(gq ...GetQuery) {
+	if q.getQueries == nil {
+		q.getQueries = make([]GetQuery, 0)
+	}
+	for _, v := range gq {
+		q.getQueries = append(q.getQueries, v)
+	}
+}
+
+func (q *Query) AddMutationQueries(mq ...MutationQuery) {
+	if q.MutationQueries == nil {
+		q.MutationQueries = make([]MutationQuery, 0)
+	}
+	for _, v := range mq {
+		q.MutationQueries = append(q.MutationQueries, v)
+	}
+}
+
+func (gq *GetQuery) AddTables(gqt ...GetQueryTable) {
+	if gq.tables == nil {
+		gq.tables = make([]GetQueryTable, 0)
+	}
+	for _, v := range gqt {
+		gq.tables = append(gq.tables, v)
+	}
+}
+
+func (gq *GetQuery) String() string {
+	ret := "{\n"
+	for _, gtq := range gq.tables {
+		ret += gtq.String() + "\n"
+	}
+	ret += "}"
+	return ret
+}
+
+func (gtq *GetQueryTable) String() string {
+	ret := gtq.Name
+	if gtq.Where != nil {
+		ret += " (where: {" + gtq.Where.String() + "})"
+	}
+	ret += " {\n"
+	for _, v := range gtq.Objects {
+		ret += v + "\n"
+	}
+	ret += "}"
+	return ret
+}
+
+func (mq *MutationQuery) String() string {
+	ret := "{\n"
+	for _, uq := range mq.UpdateQueries {
+		ret += uq.String() + "\n"
+	}
+	for _, iq := range mq.InsertQueries {
+		ret += iq.String() + "\n"
+	}
+	for _, dq := range mq.DeleteQueries {
+		ret += dq.String() + "\n"
+	}
+	ret += "}"
+	return ret
+}
+
+func (uq *UpdateQuery) String() string {
+	ret := "update_" + uq.TableName
+	ret += "("
+	if uq.Where != nil {
+		ret += "where: {" + uq.Where.String() + "}, "
+	}
+	ret += "_set:{"
+	for k, v := range uq.Set {
+		ret += k + ": $" + v + ", "
+	}
+	ret = strings.TrimSuffix(ret, ", ")
+	ret += "}) {\n"
+	if uq.AffectedRows {
+		ret += "affected_rows\n"
+	}
+	if uq.Returning != nil && len(uq.Returning) > 0 {
+		ret += "returning {\n"
+		for _, v := range uq.Returning {
+			ret += v + "\n"
+		}
+		ret += "}\n"
+	}
+	ret += "}"
+	return ret
+}
+
+func (iq *InsertQuery) String() string {
+	ret := "insert_" + iq.TableName + "(objects:{"
+	for k, v := range iq.Objects {
+		ret += k + ": $" + v + ", "
+	}
+	ret = strings.TrimSuffix(ret, ", ")
+	ret += "}) {\n"
+	if iq.AffectedRows {
+		ret += "affected_rows\n"
+	}
+	if iq.Returning != nil && len(iq.Returning) > 0 {
+		ret += "returning {\n"
+		for _, v := range iq.Returning {
+			ret += v + "\n"
+		}
+		ret += "}\n"
+	}
+	ret += "}"
+	return ret
+}
+
+func (dq *DeleteQuery) String() string {
+	ret := "delete_" + dq.TableName + "(where: {" + dq.Where.String() + "}){\n"
+	if dq.AffectedRows {
+		ret += "affected_rows\n"
+	}
+	if dq.Returning != nil {
+		for _, v := range dq.Returning {
+			ret += v + "\n"
+		}
+	}
+	ret += "}"
+	return ret
 }
