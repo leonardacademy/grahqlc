@@ -78,6 +78,18 @@ func (c *Client) logf(format string, args ...interface{}) {
 	c.Log(fmt.Sprintf(format, args...))
 }
 
+func (c *Client) Run(req *Request) error {
+    return c.RunCtxRet(context.Background(), req, nil)
+}
+
+func (c *Client) RunRet(req *Request, resp interface{}) error {
+    return c.RunCtxRet(context.Background(), req, resp)
+}
+
+func (c *Client) RunCtx(ctx context.Context, req *Request) error {
+    return c.RunCtxRet(context.Background(), req, nil)
+}
+
 // Run executes the query and unmarshals the response from the data field into
 // the response object.
 // Pass in a nil response object to skip response parsing.
@@ -85,7 +97,7 @@ func (c *Client) logf(format string, args ...interface{}) {
 // to get updates.
 // If the request fails or the server returns an error, the first error
 // encountered will be returned.
-func (c *Client) Run(ctx context.Context, req *Request, resp interface{}) error {
+func (c *Client) RunCtxRet(ctx context.Context, req *Request, resp interface{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

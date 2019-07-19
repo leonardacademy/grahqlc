@@ -1,7 +1,6 @@
 package hasb
 
 import (
-	"context"
 	"log"
 	"math/rand"
 	"os"
@@ -27,22 +26,22 @@ func (a alphanum) Generate(rand *rand.Rand, size int) reflect.Value {
 func TestGetUpdate(t *testing.T) {
 	client := getClient()
 	f := func(x int32, a alphanum) bool {
-        id := "27f33f9b-c47b-4b26-bade-763b8774a338"
+		id := "27f33f9b-c47b-4b26-bade-763b8774a338"
 		s := string(a)
 		log.Println(s)
-		err := client.Run(context.Background(), UpdateRow("graphqlc_tests", uuid.FromStringOrNil(id), map[string]interface{}{"num": x, "sentence": s}), nil)
+		err := client.Run(UpdateRow("graphqlc_tests", uuid.FromStringOrNil(id), map[string]interface{}{"num": x, "sentence": s}))
 		if err != nil {
 			log.Println(err)
 			return false
 		}
 		var resp QResp
-		err = client.Run(context.Background(), GetRow("graphqlc_tests", uuid.FromStringOrNil(id), []string{"num", "sentence"}), &resp)
+		err = client.RunRet(GetRow("graphqlc_tests", uuid.FromStringOrNil(id), []string{"num", "sentence"}), &resp)
 		if err != nil {
 			log.Println(err)
 			return false
 		}
 		log.Println(resp)
-        ret := resp["graphqlc_tests"][0]
+		ret := resp["graphqlc_tests"][0]
 		return ret["num"] == float64(x) && ret["sentence"] == s
 	}
 	if err := quick.Check(f, &quick.Config{MaxCount: 10}); err != nil {
@@ -53,29 +52,29 @@ func TestGetUpdate(t *testing.T) {
 func TestInsertDelete(t *testing.T) {
 	client := getClient()
 	f := func(x int32, a alphanum) bool {
-        s := string(a)
-        var resp MResp
-        err := client.Run(context.Background(), InsertRowRet("graphqlc_tests", map[string]interface{}{"num": x, "sentence": s}, []string{"id"}), &resp)
-        if err != nil {
-            log.Println(err)
-            return false
-        }
+		s := string(a)
+		var resp MResp
+		err := client.RunRet(InsertRowRet("graphqlc_tests", map[string]interface{}{"num": x, "sentence": s}, []string{"id"}), &resp)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
 
-        log.Println(resp)
-        id, err := uuid.FromString(resp["insert_graphqlc_tests"].Returning[0]["id"].(string))
-        if err != nil {
-            log.Println(err)
-            return false
-        }
+		log.Println(resp)
+		id, err := uuid.FromString(resp["insert_graphqlc_tests"].Returning[0]["id"].(string))
+		if err != nil {
+			log.Println(err)
+			return false
+		}
 
-        err = client.Run(context.Background(), DeleteRow("graphqlc_tests", id), nil)
-        if err != nil {
-            log.Println(err)
-            return false
-        }
-        return true
+		err = client.Run(DeleteRow("graphqlc_tests", id))
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		return true
 	}
-    if err := quick.Check(f, &quick.Config{MaxCount: 10}); err != nil {
+	if err := quick.Check(f, &quick.Config{MaxCount: 10}); err != nil {
 		t.Error(err)
 	}
 }

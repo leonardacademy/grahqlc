@@ -38,6 +38,6 @@ func TestFile(t *testing.T) {
 	f := strings.NewReader(`This is a file`)
 	req := NewRequest("query {}")
 	req.File("file", "filename.txt", f)
-	err := client.Run(ctx, req, nil)
+	err := client.RunCtx(ctx, req)
 	is.NoErr(err)
 }
